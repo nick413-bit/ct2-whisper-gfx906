@@ -14,7 +14,7 @@ FROM rocm/pytorch:rocm6.3_ubuntu22.04_py3.10_pytorch_release_2.4.0
 
 ENV DEBIAN_FRONTEND=noninteractive \
     CTRANSLATE2_ROOT=/opt/ctranslate2 \
-    LD_LIBRARY_PATH=/opt/ctranslate2/lib:/opt/rocm/lib:/usr/local/lib \
+    LD_LIBRARY_PATH=/opt/ctranslate2/lib:/opt/conda/envs/py_3.10/lib:/opt/rocm/lib:/opt/rocm-6.3.0/lib/llvm/lib:/usr/local/lib \
     CT2_CUDA_ALLOCATOR=cub_caching \
     CT2_CUDA_CACHING_ALLOCATOR_CONFIG=4,3,12,419430400 \
     HSA_OVERRIDE_GFX_VERSION=9.0.6 \
@@ -92,6 +92,9 @@ RUN pip install --no-cache-dir \
     rm -rf ~/.cache/pip
 
 # --- strip build toolchain (keeps runtime libs) ---------------------------
+# Keep libopenblas0 / libsndfile1 / ffmpeg / curl — CT2 and noisereduce need
+# them at runtime. libomp.so lives inside /opt/conda/envs/py_3.10/lib (baked
+# into the base image) and is referenced via LD_LIBRARY_PATH above.
 RUN apt-get purge -y --auto-remove \
         git cmake ninja-build build-essential pkg-config \
         libopenblas-dev libomp-dev wget && \
