@@ -1,0 +1,14 @@
+ct2-whisper-gfx906 authors and contributors
+===========================================
+
+Maintainer
+----------
+nick413-bit  <nick413@gmail.com>
+
+Upstream projects this image depends on
+---------------------------------------
+- CTranslate2 (MIT)                 — OpenNMT contributors
+- CTranslate2-rocm (MIT)            — arlo-phoenix
+- faster-whisper (MIT)              — SYSTRAN
+- pyannote.audio (MIT, weights CC)  — Hervé Bredin et al.
+- ROCm / HIP                        — AMD

@@ -1,0 +1,190 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whisper Transcription</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;color:#e2e8f0;min-height:100vh}
+.ct{max-width:960px;margin:0 auto;padding:24px}
+.hdr{text-align:center;margin-bottom:32px}
+h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#64748b;font-size:.88rem;margin-top:4px}
+.card{background:#111827;border-radius:16px;padding:24px;margin-bottom:20px;border:1px solid #1f2937;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.drop{border:2px dashed #374151;border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:.3s}
+.drop:hover,.drop.ov{border-color:#3b82f6;background:rgba(59,130,246,.05)}
+.drop input{display:none}
+.drop-i{font-size:2.8rem;margin-bottom:6px;filter:grayscale(40%)}
+.drop p{color:#6b7280;margin-top:4px;font-size:.83rem}
+.fname{color:#93c5fd;font-weight:600;margin-top:8px;font-size:.92rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:16px}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:.72rem;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+.f select,.f input[type=number]{background:#0a0e1a;border:1px solid #1f2937;color:#e2e8f0;padding:7px 10px;border-radius:8px;font-size:.83rem;min-width:55px}
+.btn{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;padding:9px 24px;border-radius:10px;font-size:.88rem;cursor:pointer;font-weight:700;transition:.2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.4)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.bsm{background:#1f2937;padding:6px 14px;font-size:.78rem;border-radius:8px;font-weight:600;border:1px solid #374151;cursor:pointer;color:#e2e8f0}
+.bsm:hover{background:#374151}
+.pipe{display:none;margin-top:20px}
+.steps{display:flex;gap:4px;margin-bottom:10px}
+.stp{flex:1;height:6px;border-radius:3px;background:#1f2937;overflow:hidden;transition:.3s}
+.stp.on{background:#1e3a5f;animation:shm 1.5s infinite}
+.stp.ok{background:linear-gradient(90deg,#3b82f6,#8b5cf6);animation:none}
+@keyframes shm{0%,100%{opacity:.6}50%{opacity:1}}
+.slb{display:flex;gap:4px;margin-bottom:12px}
+.slb span{flex:1;font-size:.68rem;color:#4b5563;text-align:center;transition:.3s}
+.slb span.on{color:#93c5fd;font-weight:600}
+.slb span.ok{color:#6ee7b7}
+.tmr{font-size:1.5rem;font-weight:800;color:#f8fafc;text-align:center;margin:8px 0;font-variant-numeric:tabular-nums}
+.llog{background:#0a0e1a;border:1px solid #1f2937;border-radius:10px;padding:10px 14px;max-height:130px;overflow-y:auto;font-family:'SF Mono',Monaco,Consolas,monospace;font-size:.75rem;line-height:1.7;color:#6b7280}
+.llog .e{display:flex;gap:8px}
+.llog .t{color:#374151;min-width:50px}
+.llog .m{color:#93c5fd}
+.llog .m.g{color:#6ee7b7}
+.llog .m.y{color:#fbbf24}
+.rc{display:none}
+.sg{padding:11px 15px;border-radius:10px;margin-bottom:5px;background:#0d1117;border-left:3px solid #3b82f6;transition:.15s}
+.sg:hover{background:#111827}
+.sg .sk{font-weight:700;font-size:.8rem;margin-bottom:2px}
+.sg .ti{font-size:.7rem;color:#4b5563;float:right;font-variant-numeric:tabular-nums}
+.sg .tx{line-height:1.6;font-size:.9rem}
+.sb{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:.8rem;color:#6b7280}
+.sb b{color:#e2e8f0}
+.c0{border-left-color:#3b82f6}.c0 .sk{color:#3b82f6}
+.c1{border-left-color:#10b981}.c1 .sk{color:#10b981}
+.c2{border-left-color:#f59e0b}.c2 .sk{color:#f59e0b}
+.c3{border-left-color:#ef4444}.c3 .sk{color:#ef4444}
+.c4{border-left-color:#8b5cf6}.c4 .sk{color:#8b5cf6}
+.c5{border-left-color:#ec4899}.c5 .sk{color:#ec4899}
+.tst{position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:10px 20px;border-radius:10px;font-size:.83rem;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+.tst.sh{opacity:1}
+</style></head>
+<body><div class="ct">
+<div class="hdr"><h1>Whisper Transcription</h1><p class="sub">faster-whisper + pyannote | 8x AMD MI50 ROCM</p></div>
+<div class="card">
+<div class="drop" id="dz" onclick="$('fi').click()">
+<div class="drop-i">&#127911;</div>
+<strong>Drop audio or click to select</strong>
+<p>MP3, WAV, OGG, FLAC, M4A</p>
+<div class="fname" id="fn"></div>
+<input type="file" id="fi" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a,.wma,.aac">
+</div>
+<div class="row">
+<div class="f"><label>Lang</label><select id="lang"><option value="">Auto</option><option value="ru">RU</option><option value="en">EN</option><option value="de">DE</option><option value="fr">FR</option><option value="es">ES</option></select></div>
+<div class="f"><label>Diarize</label><select id="dia"><option value="auto">On</option><option value="off">Off</option></select></div>
+<div class="f"><label>Preproc</label><select id="pp"><option value="auto">On</option><option value="off">Off</option></select></div>
+<div class="f"><label>Speakers</label><input type="number" id="nS" min="0" max="20" value="0"></div>
+<div class="f"><label>Min</label><input type="number" id="mi" min="0" max="20" value="0"></div>
+<div class="f"><label>Max</label><input type="number" id="mx" min="0" max="20" value="0"></div>
+<button class="btn" id="go" onclick="run()" disabled>Transcribe</button>
+</div>
+<div class="pipe" id="pipe">
+<div class="tmr" id="tmr">00:00</div>
+<div class="steps"><div class="stp" id="s0"></div><div class="stp" id="s1"></div><div class="stp" id="s2"></div><div class="stp" id="s3"></div></div>
+<div class="slb"><span id="l0">Upload</span><span id="l1">Preprocess</span><span id="l2">Diarize</span><span id="l3">Transcribe</span></div>
+<div class="llog" id="lg"></div>
+</div></div>
+<div class="card rc" id="rc">
+<div class="sb" id="st"></div>
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+<button class="bsm" onclick="cpT()">Copy Text</button>
+<button class="bsm" onclick="cpJ()">Copy JSON</button>
+<button class="bsm" onclick="dlS()">Download SRT</button></div>
+<div id="sg"></div></div>
+<div class="tst" id="tst"></div>
+<script>
+let F=null,R=null,TI=null,T0=0,PI=null,LL=0;
+const $=i=>document.getElementById(i);
+const dz=$('dz');
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('ov')};
+dz.ondragleave=()=>dz.classList.remove('ov');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('ov');pk(e.dataTransfer.files[0])};
+$('fi').onchange=e=>pk(e.target.files[0]);
+function pk(f){if(!f)return;F=f;$('fn').textContent=f.name+' ('+fz(f.size)+')';$('go').disabled=false;}
+function fz(b){if(b<1e3)return b+'B';if(b<1e6)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+function mm(s){let m=Math.floor(s/60),c=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(c).padStart(2,'0');}
+function sr(s){let h=Math.floor(s/3600),m=Math.floor((s%3600)/60),c=Math.floor(s%60),ms=Math.floor((s%1)*1000);
+return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(c).padStart(2,'0')+','+String(ms).padStart(3,'0');}
+function tst(m){const t=$('tst');t.textContent=m;t.classList.add('sh');setTimeout(()=>t.classList.remove('sh'),2200);}
+function al(m,c){const l=$('lg'),d=document.createElement('div');d.className='e';
+const el=((Date.now()-T0)/1000).toFixed(1);
+d.innerHTML='<span class="t">'+el+'s</span><span class="m'+(c?' '+c:'')+'">'+m+'</span>';
+l.appendChild(d);l.scrollTop=l.scrollHeight;}
+const ST=['upload','preprocess','diarize','transcribe'];
+function setS(n){
+const x=ST.indexOf(n);if(x<0)return;
+for(let i=0;i<4;i++){$('s'+i).className='stp'+(i<x?' ok':i===x?' on':'');$('l'+i).className=i<x?'ok':i===x?'on':'';}}
+function allOk(){for(let i=0;i<4;i++){$('s'+i).className='stp ok';$('l'+i).className='ok';}}
+function tiOn(){T0=Date.now();TI=setInterval(()=>{$('tmr').textContent=mm(Math.floor((Date.now()-T0)/1000));},500);}
+function tiOff(){if(TI){clearInterval(TI);TI=null;}}
+function pollOn(){
+LL=0;PI=setInterval(async()=>{
+try{
+const r=await fetch('/v1/status');const d=await r.json();
+if(d.stage&&d.stage!=='idle')setS(d.stage);
+if(d.stage==='done')allOk();
+const logs=d.logs||[];
+for(let i=LL;i<logs.length;i++)al(logs[i].msg,d.stage==='done'?'g':'');
+LL=logs.length;
+}catch(e){}
+},1200);}
+function pollOff(){if(PI){clearInterval(PI);PI=null;}}
+async function run(){
+if(!F)return;$('go').disabled=true;$('rc').style.display='none';
+$('pipe').style.display='block';$('lg').innerHTML='';
+for(let i=0;i<4;i++){$('s'+i).className='stp';$('l'+i).className='';}
+tiOn();pollOn();al('Uploading '+F.name+'...');
+setS('upload');
+const fd=new FormData();
+fd.append('file',F);fd.append('response_format','verbose_json');
+fd.append('diarize',$('dia').value);
+fd.append('preprocessing',$('pp').value);
+const la=$('lang').value;if(la)fd.append('language',la);
+var ns=parseInt($('nS').value)||0,mi=parseInt($('mi').value)||0,mx=parseInt($('mx').value)||0;
+if(ns>0)fd.append('num_speakers',ns);
+if(mi>0)fd.append('min_speakers',mi);
+if(mx>0)fd.append('max_speakers',mx);
+try{
+const r=await fetch('/v1/audio/transcriptions',{method:'POST',body:fd});
+if(!r.ok)throw new Error('HTTP '+r.status);
+R=await r.json();
+tiOff();pollOff();allOk();
+al('Done in '+((Date.now()-T0)/1000).toFixed(1)+'s','g');
+show(R);
+}catch(e){tiOff();pollOff();al('Error: '+e.message,'y');}
+$('go').disabled=false;}
+function show(d){
+$('rc').style.display='block';
+const segs=d.segments||[{text:d.text,start:0,end:0}];
+const sp=[...new Set(segs.map(s=>s.speaker).filter(Boolean))];
+let h='Segments: <b>'+segs.length+'</b>';
+if(sp.length)h+=' &middot; Speakers: <b>'+sp.length+'</b>';
+if(d.processing_time)h+=' &middot; Time: <b>'+d.processing_time+'s</b>';
+if(d.gpus_used)h+=' &middot; GPUs: <b>'+d.gpus_used+'</b>';
+$('st').innerHTML=h;
+const el=$('sg');el.innerHTML='';
+segs.forEach(s=>{
+const si=sp.indexOf(s.speaker);
+const c=si>=0?'sg c'+si%6:'sg';
+const sk=s.speaker?'<div class="sk">'+s.speaker+'</div>':'';
+const t=s.end?'<span class="ti">'+mm(s.start)+' - '+mm(s.end)+'</span>':'';
+el.innerHTML+='<div class="'+c+'">'+t+sk+'<div class="tx">'+s.text+'</div></div>';});}
+async function cpT(){
+if(!R)return;
+const s=R.segments||[];
+const t=s.map(x=>(x.speaker?x.speaker+': ':'')+x.text).join('\n')||R.text;
+try{await navigator.clipboard.writeText(t);tst('Copied!');}catch(e){
+const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;left:-999px';
+document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);tst('Copied!');}}
+async function cpJ(){
+if(!R)return;const t=JSON.stringify(R,null,2);
+try{await navigator.clipboard.writeText(t);tst('JSON copied!');}catch(e){
+const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;left:-999px';
+document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);tst('JSON copied!');}}
+function dlS(){
+if(!R||!R.segments)return;let s='';
+R.segments.forEach((x,i)=>{s+=(i+1)+'\n'+sr(x.start)+' --> '+sr(x.end)+'\n';
+if(x.speaker)s+=x.speaker+': ';s+=x.text+'\n\n';});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(new Blob([s],{type:'text/plain'}));
+a.download='transcription.srt';a.click();tst('SRT downloaded!');}
+</script></div></body></html>

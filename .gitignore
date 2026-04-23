@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.env
+.env.*
+!.env.example
+models/
+.venv/
+venv/
+.DS_Store
+*.swp
+*.swo
